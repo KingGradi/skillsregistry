@@ -1,0 +1,13 @@
+diff --git a/memcache_admin/src/EventSubscriber/MemcacheAdminSubscriber.php b/memcache_admin/src/EventSubscriber/MemcacheAdminSubscriber.php
+index 03ae739..ffee825 100644
+--- a/memcache_admin/src/EventSubscriber/MemcacheAdminSubscriber.php
++++ b/memcache_admin/src/EventSubscriber/MemcacheAdminSubscriber.php
+@@ -53,7 +53,7 @@ class MemcacheAdminSubscriber implements EventSubscriberInterface {
+       if ($response instanceof HtmlResponse) {
+ 
+         // This should only apply to page content.
+-        if (stripos($response->headers->get('content-type'), 'text/html') !== FALSE) {
++        if (stripos((string) $response->headers->get('content-type'), 'text/html') !== FALSE) {
+           $show_stats = \Drupal::config('memcache_admin.settings')->get('show_memcache_statistics');
+           if ($show_stats && $user->hasPermission('access memcache statistics')) {
+             $output = '';

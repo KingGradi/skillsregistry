@@ -1,0 +1,52 @@
+# Drupal folders
+web/core/
+web/modules/contrib/
+web/themes/contrib/
+web/profiles/contrib/
+web/libraries/
+web/sites/default/files/
+web/sites/default/private/
+sites/default/files/
+sites/default/private/
+
+# Composer and dependencies
+vendor/
+composer.lock
+
+# Development/IDE files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+*~
+.project
+.buildpath
+.classpath
+*.sublime-workspace
+
+# PHP and sensitive info
+.env
+.env.local
+*.log
+web/sites/default/settings.local.php
+
+# Temporary files
+.tmp/
+tmp/
+temp/
+*.bak
+*.backup
+
+# Database dumps (local)
+*.sql
+skillsregistry.fixed.sql
+core_extension.yml
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Node/Build tools
+node_modules/
+npm-debug.log

@@ -1,0 +1,19 @@
+diff --git a/multiple_registration.module b/multiple_registration.module
+index e52ffc7..5e49427 100755
+--- a/multiple_registration.module
++++ b/multiple_registration.module
+@@ -229,12 +229,13 @@ function _multiple_registration_rid(array $form, FormStateInterface $form_state)
+ 
+   if ($rid && $uid) {
+     $connection = Database::getConnection();
+-    $connection->insert('multiple_registration')
++    $connection->upsert('multiple_registration')
+       ->fields([
+           'uid' => $uid,
+           'rid' => $rid,
+         ]
+       )
++      ->key('uid')
+       ->execute();
+   }
+ 

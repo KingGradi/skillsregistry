@@ -1,0 +1,17 @@
+Redirect 301 /skill-selector/ /search?search=
+
+Redirect 301 /skills-accounting/ /search?search=
+Redirect 301 /skills-api/ /search?search=
+Redirect 301 /skills-cms/ /search?search=
+Redirect 301 /skills-database/ /search?search=
+Redirect 301 /skills-dif/ /search?search=
+Redirect 301 /skills-e-commerce/ /search?search=
+Redirect 301 /skills-frameworks/ /search?search=
+Redirect 301 /skills-graphic-design/ /search?search=
+Redirect 301 /skills-languages/ /search?search=
+Redirect 301 /skills-office-productivity/ /search?search=
+Redirect 301 /skills-os/ /search?search=
+Redirect 301 /skills-sysadmin/ /search?search=
+Redirect 301 /skills-vcs/ /search?search=
+Redirect 301 /skills-virtualisation/ /search?search=
+Redirect 301 /skills-web-design/ /search?search=
