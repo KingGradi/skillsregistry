@@ -50,3 +50,7 @@ desktop.ini
 # Node/Build tools
 node_modules/
 npm-debug.log
+
+# Embedded git repositories / submodules
+web/themes/custom/skillsregistry/.git
+web/themes/custom/skillsregistry/
