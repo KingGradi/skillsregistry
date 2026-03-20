@@ -1,0 +1,7 @@
+moderator_access.manage:
+  path: '/moderator/manage-access'
+  defaults:
+    _form: '\Drupal\moderator_access\Form\ModeratorAccessForm'
+    _title: 'Manage moderator access'
+  requirements:
+    _permission: 'manage moderator access'

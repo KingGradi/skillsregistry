@@ -1,0 +1,7 @@
+moderator_access.manage:
+  title: 'Manage moderator access'
+  description: 'Grant or revoke WG moderator access.'
+  route_name: moderator_access.manage
+  menu_name: admin
+  parent: entity.user.collection
+  weight: 10

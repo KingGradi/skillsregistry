@@ -1,0 +1,7 @@
+name: Moderator Access
+type: module
+description: Allows WG moderators to grant and revoke moderator role access.
+core_version_requirement: ^9 || ^10
+package: Custom
+dependencies:
+  - drupal:user

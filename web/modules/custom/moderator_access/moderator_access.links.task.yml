@@ -1,0 +1,5 @@
+moderator_access.manage_tab:
+  route_name: moderator_access.manage
+  title: 'Manage moderator access'
+  base_route: view.moderator_list.page_1
+  weight: 10

@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * @file
+ * Hooks for the Moderator Access module.
+ */
+
+use Drupal\user\Entity\Role;
+
+/**
+ * Implements hook_install().
+ */
+function moderator_access_install() {
+  $role = Role::load('wg');
+  if ($role && !$role->hasPermission('manage moderator access')) {
+    $role->grantPermission('manage moderator access');
+    $role->save();
+  }
+}
