@@ -1,0 +1,238 @@
+<?php
+
+/**
+ * @file
+ * Candidate approval workflow for candidate user registrations.
+ */
+
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\user\Entity\Role;
+use Drupal\user\UserInterface;
+
+/**
+ * Implements hook_install().
+ *
+ * Creates approval fields on users and grants moderation permission.
+ */
+function candidate_approval_install() {
+  if (!FieldStorageConfig::loadByName('user', 'field_candidate_approval_status')) {
+    FieldStorageConfig::create([
+      'field_name'  => 'field_candidate_approval_status',
+      'entity_type' => 'user',
+      'type'        => 'list_string',
+      'cardinality' => 1,
+      'settings'    => [
+        'allowed_values' => [
+          'pending'  => 'Pending approval',
+          'approved' => 'Approved',
+          'declined' => 'Declined',
+        ],
+      ],
+    ])->save();
+  }
+
+  if (!FieldConfig::loadByName('user', 'user', 'field_candidate_approval_status')) {
+    FieldConfig::create([
+      'field_name'    => 'field_candidate_approval_status',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'label'         => 'Candidate Approval Status',
+      'required'      => FALSE,
+    ])->save();
+  }
+
+  if (!FieldStorageConfig::loadByName('user', 'field_candidate_delete_on')) {
+    FieldStorageConfig::create([
+      'field_name'  => 'field_candidate_delete_on',
+      'entity_type' => 'user',
+      'type'        => 'string',
+      'cardinality' => 1,
+      'settings'    => ['max_length' => 10],
+    ])->save();
+  }
+
+  if (!FieldConfig::loadByName('user', 'user', 'field_candidate_delete_on')) {
+    FieldConfig::create([
+      'field_name'  => 'field_candidate_delete_on',
+      'entity_type' => 'user',
+      'bundle'      => 'user',
+      'label'       => 'Candidate Deletion Scheduled',
+      'required'    => FALSE,
+    ])->save();
+  }
+
+  // Grant permission to the WG (moderator) role.
+  $wg = Role::load('wg');
+  if ($wg && !$wg->hasPermission('manage candidate approvals')) {
+    $wg->grantPermission('manage candidate approvals');
+    $wg->save();
+  }
+
+  // Existing candidate users are treated as approved to avoid regressions.
+  $uids = \Drupal::entityQuery('user')
+    ->condition('roles', 'candidate')
+    ->accessCheck(FALSE)
+    ->execute();
+
+  if (!empty($uids)) {
+    $storage = \Drupal::entityTypeManager()->getStorage('user');
+    foreach ($storage->loadMultiple($uids) as $account) {
+      if ($account->get('field_candidate_approval_status')->isEmpty()) {
+        $account->set('field_candidate_approval_status', 'approved');
+      }
+      if ($account->get('field_candidate_delete_on')->isEmpty()) {
+        $account->set('field_candidate_delete_on', NULL);
+      }
+      $account->save();
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Removes user approval fields.
+ */
+function candidate_approval_uninstall() {
+  $fc_status = FieldConfig::loadByName('user', 'user', 'field_candidate_approval_status');
+  if ($fc_status) {
+    $fc_status->delete();
+  }
+  $fsc_status = FieldStorageConfig::loadByName('user', 'field_candidate_approval_status');
+  if ($fsc_status) {
+    $fsc_status->delete();
+  }
+
+  $fc_del = FieldConfig::loadByName('user', 'user', 'field_candidate_delete_on');
+  if ($fc_del) {
+    $fc_del->delete();
+  }
+  $fsc_del = FieldStorageConfig::loadByName('user', 'field_candidate_delete_on');
+  if ($fsc_del) {
+    $fsc_del->delete();
+  }
+}
+
+/**
+ * Implements hook_user_presave().
+ *
+ * New candidate registrations are set to pending and blocked by default.
+ * If a declined candidate edits and resubmits, status resets to pending.
+ */
+function candidate_approval_user_presave(UserInterface $account) {
+  if (!$account->hasRole('candidate')) {
+    return;
+  }
+
+  if ($account->isNew()) {
+    $account->set('field_candidate_approval_status', 'pending');
+    $account->set('field_candidate_delete_on', NULL);
+    $account->block();
+    return;
+  }
+
+  $current_user = \Drupal::currentUser();
+  $is_moderator = $current_user->hasPermission('manage candidate approvals')
+    || $current_user->hasPermission('administer users');
+
+  if (!$is_moderator && isset($account->original)) {
+    $prev_status = $account->original->get('field_candidate_approval_status')->value;
+    if ($prev_status === 'declined') {
+      $account->set('field_candidate_approval_status', 'pending');
+      $account->set('field_candidate_delete_on', NULL);
+      $account->block();
+    }
+  }
+}
+
+/**
+ * Implements hook_user_access().
+ *
+ * Prevents company users from viewing pending or declined candidate accounts.
+ */
+function candidate_approval_user_access(UserInterface $entity, $op, \Drupal\Core\Session\AccountInterface $account) {
+  if ($op !== 'view' || !$entity->hasRole('candidate')) {
+    return \Drupal\Core\Access\AccessResult::neutral();
+  }
+
+  if ($account->hasPermission('administer users') || $account->hasPermission('manage candidate approvals')) {
+    return \Drupal\Core\Access\AccessResult::neutral();
+  }
+
+  $viewer_roles = $account->getRoles();
+  if (!in_array('company', $viewer_roles, TRUE)) {
+    return \Drupal\Core\Access\AccessResult::neutral();
+  }
+
+  $status = $entity->get('field_candidate_approval_status')->value;
+  if ($status !== 'approved') {
+    return \Drupal\Core\Access\AccessResult::forbidden()->cachePerPermissions();
+  }
+
+  return \Drupal\Core\Access\AccessResult::neutral();
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * Deletes declined candidate accounts after the 30-day resubmission window.
+ */
+function candidate_approval_cron() {
+  $today = date('Y-m-d');
+
+  $uids = \Drupal::entityQuery('user')
+    ->condition('roles', 'candidate')
+    ->condition('field_candidate_approval_status', 'declined')
+    ->condition('field_candidate_delete_on', $today, '<=')
+    ->condition('field_candidate_delete_on', '', '<>')
+    ->accessCheck(FALSE)
+    ->execute();
+
+  if (empty($uids)) {
+    return;
+  }
+
+  $storage = \Drupal::entityTypeManager()->getStorage('user');
+  $users = $storage->loadMultiple($uids);
+  $storage->delete($users);
+
+  \Drupal::logger('candidate_approval')->notice(
+    'Deleted @count declined candidate account(s) past their scheduled deletion date.',
+    ['@count' => count($users)]
+  );
+}
+
+/**
+ * Implements hook_mail().
+ *
+ * Defines the approval and rejection email messages sent to candidates.
+ */
+function candidate_approval_mail($key, &$message, $params) {
+  $name = $params['candidate_name'] ?? 'Candidate';
+
+  switch ($key) {
+    case 'approved':
+      $message['subject'] = 'Registration for the ICT Skills Registry approved';
+      $message['body'][]  = implode("\n\n", [
+        "Dear {$name},",
+        "Thank you for registering on the ICT Skills Registry. Your registration has been approved and will now be visible to companies using the system.",
+        "We wish you every success.",
+        "If you have any questions or support queries about the system, please contact contact@skillsregistry.org.za.",
+        "Kind regards,\nThe Skills Registry",
+      ]);
+      break;
+
+    case 'declined':
+      $message['subject'] = 'Registration for the ICT Skills Registry rejected';
+      $message['body'][]  = implode("\n\n", [
+        "Dear {$name},",
+        "Your registration for the ICT Skills Register has been rejected. A moderator rejects a registration if a candidate appears to have no relevant experience, training or skills within the ICT sector.",
+        "If you would like to appeal to the moderator to reconsider your registration please respond to this email. The moderator will then provide additional reasons for the rejection and will outline the changes that you can make, to ensure your registration is successful.",
+        "We thank you for the time you have taken to complete the registration and wish you the best in your future endeavours.",
+        "If you have any questions or support queries about the system, please contact contact@skillsregistry.org.za.",
+        "Kind regards,\nThe ICT Skills Registry",
+      ]);
+      break;
+  }
+}

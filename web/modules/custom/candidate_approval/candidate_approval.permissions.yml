@@ -1,0 +1,4 @@
+manage candidate approvals:
+  title: 'Manage candidate approvals'
+  description: 'View pending candidate registrations and approve or decline them.'
+  restrict access: true

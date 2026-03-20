@@ -1,0 +1,11 @@
+name: Candidate Approval
+type: module
+description: 'Provides a moderator workflow for approving or declining candidate registrations before they are visible to company users.'
+core_version_requirement: ^9 || ^10
+package: Custom
+
+dependencies:
+  - drupal:node
+  - drupal:user
+  - drupal:field
+  - drupal:options

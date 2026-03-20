@@ -1,4 +1,8 @@
-# Moderator Role Management Feature
+# Phase 1: Moderator Role Management Feature
+
+**Part of:** [Chronological Timeline](TIMELINE.md)  
+**First phase** of implementation cycle  
+**Leads to:** [Phase 2 – Candidate Approval](candidate-approval-feature.md)
 
 Date: 2026-03-20
 Module path: `web/modules/custom/moderator_access`

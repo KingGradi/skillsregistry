@@ -1,0 +1,15 @@
+candidate_approval.pending_list:
+  path: '/moderator/candidate-approvals'
+  defaults:
+    _form: '\Drupal\candidate_approval\Form\CandidateApprovalForm'
+    _title: 'Candidate Approval Queue'
+  requirements:
+    _permission: 'manage candidate approvals'
+
+candidate_approval.pending_list_admin:
+  path: '/admin/people/candidate-approvals'
+  defaults:
+    _form: '\Drupal\candidate_approval\Form\CandidateApprovalForm'
+    _title: 'Candidate Approval Queue'
+  requirements:
+    _permission: 'manage candidate approvals'

@@ -1,0 +1,6 @@
+candidate_approval.pending_list:
+  title: 'Candidate Approvals'
+  description: 'Approve or decline pending candidate registrations.'
+  route_name: candidate_approval.pending_list
+  parent: entity.user.collection
+  weight: 20
